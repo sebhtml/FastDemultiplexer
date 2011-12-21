@@ -1,0 +1,209 @@
+#!/usr/bin/python
+# encoding: UTF-8
+# author: Sébastien Boisvert
+# this is public domain
+
+
+import gzip
+import sys
+import os
+
+if len(sys.argv)!=4:
+	print "usage"
+	print "FastDemultilexer SampleSheet.csv Project_XYZ/Sample_lane1 Demultiplexed"
+	sys.exit(0)
+
+class Entry:
+	def __init__(self,project,sample,index1,index2):
+		#print "entry with "+project+" "+sample+" "+index1+" "+index2
+		self.m_project=project
+		self.m_sample=sample
+		self.m_index1=index1
+		self.m_index2=index2
+
+	def getProject(self):
+		return self.m_project
+	def getSample(self):
+		return self.m_sample
+	def getIndex1(self):
+		return self.m_index1
+	def getIndex2(self):
+		return self.m_index2
+
+class SampleSheet:
+	def __init__(self,sampleSheet,lane):
+		# C0947ACXX,4,CQDM1-1,No,TAAGGCGA-TAGATCGC,P2J0-1,N,PE_indexing,LR,CQDM
+		projectColumn=9
+		sampleColumn=2
+		indexColumn=4
+		laneColumn=1
+
+		self.m_entries=[]
+
+		for line in open(sampleSheet):
+			tokens=line.split(",")
+			if len(tokens)<4:
+				continue
+
+			theLane=tokens[laneColumn]
+
+			if lane!=theLane:
+				continue
+
+			project=tokens[projectColumn].strip()
+			sample=tokens[sampleColumn]
+			index=tokens[indexColumn]
+
+			tokens2=index.split("-")
+			index1=tokens2[0]
+			index2=""
+			if len(tokens2)==2:
+				index2=tokens2[1]
+
+			entry=Entry(project,sample,index1,index2)
+			
+			self.m_entries.append(entry)
+
+	def compare(self,sequence1,sequence2):
+		score=0
+		i=0
+		len1=len(sequence1)
+		len2=len(sequence2)
+
+		while i<len1 and i<len2:
+			if sequence1[i]!=sequence2[i]:
+				score+=1
+			i+=1
+		
+		return score
+
+	def classify(self,index1,index2,lane):
+		threshold=4
+
+		for entry in self.m_entries:
+			score1=self.compare(entry.getIndex1(),index1)
+			score2=self.compare(entry.getIndex2(),index2)
+
+			#print entry.getSample()+" "+str(score1)+" "+str(score2)
+
+			if score1<threshold and score2<threshold:
+				return [entry.getProject(),entry.getSample()]
+
+		return ["Undetermined_indices","Sample_lane"+lane]
+
+class Sequence:
+	def __init__(self,line1,line2,line3,line4):
+		#print "Initiating "+line1
+		self.m_line1=line1
+		self.m_line2=line2
+		self.m_line3=line3
+		self.m_line4=line4
+
+	def getLine1(self):
+		return self.m_line1
+	def getLine2(self):
+		return self.m_line2
+	def getLine3(self):
+		return self.m_line3
+	def getLine4(self):
+		return self.m_line4
+
+class FileReader:
+	def __init__(self,filePath):
+		print "Opening "+filePath
+		if filePath.find(".gz")>=0:
+			self.m_file=gzip.open(filePath)
+		else:
+			self.m_file=open(filePath)
+
+	def hasNext(self):
+		return self.m_file
+
+	def getNext(self):
+		sequence=Sequence(self.m_file.readline(),self.m_file.readline(),self.m_file.readline(),self.m_file.readline())
+		return sequence
+
+class InputDirectory:
+	def __init__(self,laneDirectory):
+		self.m_directory=laneDirectory
+
+		self.m_r1Files=[]
+		self.m_r2Files=[]
+		self.m_r3Files=[]
+		self.m_r4Files=[]
+
+		for i in os.listdir(self.m_directory):
+			if i.find("_R1_")>=0:
+				self.m_r1Files.append(i)
+				self.m_r2Files.append(i.replace("_R1_","_R2_"))
+				self.m_r3Files.append(i.replace("_R1_","_R3_"))
+				self.m_r4Files.append(i.replace("_R1_","_R4_"))
+
+		self.m_current=0
+
+		self.setReadersToCurrent()
+
+		while not self.m_reader1.hasNext() and self.m_current<len(self.m_r1Files):
+			self.m_current+=1
+			setReadersToCurrent()
+
+	def setReadersToCurrent(self):
+		if not self.m_current<len(self.m_r1Files):
+			return
+
+		self.m_reader1=FileReader(self.m_directory+"/"+self.m_r1Files[self.m_current])
+		self.m_reader2=FileReader(self.m_directory+"/"+self.m_r2Files[self.m_current])
+		self.m_reader3=FileReader(self.m_directory+"/"+self.m_r3Files[self.m_current])
+		self.m_reader4=FileReader(self.m_directory+"/"+self.m_r4Files[self.m_current])
+			
+
+	def hasNext(self):
+		if self.m_current>=len(self.m_r1Files):
+			return False
+
+		while not self.m_reader1.hasNext() and self.m_current<len(self.m_r1Files):
+			self.m_current+=1
+			setReadersToCurrent()
+
+		return self.m_reader1.hasNext()
+
+	def getNext(self):
+		return [self.m_reader1.getNext(),self.m_reader2.getNext(),self.m_reader3.getNext(),self.m_reader4.getNext()]
+
+class OutputDirectory:
+	def __init__(self,outputDirectory):
+		self.m_directory=outputDirectory
+
+	def write(self,project,sample,lane,sequenceTuple):
+		#print "Writing to "+project+" "+sample+" "+lane
+		print sample
+
+
+class Demultiplexer:
+	def __init__(self,sampleSheet,inputDirectoryPath,outputDirectoryPath,lane):
+		sheet=SampleSheet(sampleSheet,lane)
+		inputDirectory=InputDirectory(inputDirectoryPath)
+		outputDirectory=OutputDirectory(outputDirectoryPath)
+
+		while inputDirectory.hasNext():
+			sequenceTuple=inputDirectory.getNext()
+			index1=sequenceTuple[1].getLine2()
+			index2=sequenceTuple[2].getLine2()
+
+			[project,sample]=sheet.classify(index1,index2,lane)
+
+			outputDirectory.write(project,sample,"lane"+lane,[sequenceTuple[0],sequenceTuple[3]])
+			
+def main():
+	sheet=sys.argv[1]
+	inputDir=sys.argv[2].replace("\/","")
+	outputDir=sys.argv[3].replace("\/","")
+
+	lane=inputDir.split("lane")[1].strip()
+
+	demultiplexer=Demultiplexer(sheet,inputDir,outputDir,lane)
+
+if __name__=="__main__":
+	main()
+
+

@@ -1,0 +1,75 @@
+== Motivation ==
+
+The Illumina HiSeq 1000 dumps .cif (intensity) files, .bcl (base calls) files and 
+.clocs (probably a summary of the intensities?)files,
+among others.
+
+Basically, for each cluster on the flow cell, there will be 4 sequences:
+R1, R2, R3, R4. R2 and R4 are the indexes, or bar-codes, and R1 and R2 are the 
+sequences.
+
+CASAVA 1.8.2 only allows 1 mismatch per index (2 for dual-indexes).
+
+This demultiplexer allows more.
+
+This demultiplexer is implemented in Python as a single executable.
+
+This is in the public domain (the "I don't care" way).
+
+
+== Conversion from BCL/CLOCS to FASTQ ==
+
+#!/bin/bash
+#$ -N convert-HiSeq1000-BCL-2011-12-21.8
+#$ -P nne-790-ab
+#$ -l h_rt=48:00:00
+#$ -pe default 8
+#$ -cwd
+
+sequenceWorld=/rap/nne-790-ab/Instruments/Illumina_HiSeq_1000_Hellbound
+run=111207_SNL131_0065_AC0947ACXX
+NSLOTS=8
+
+source /rap/nne-790-ab/software/CASAVA_v1.8.2/module-load.sh
+
+configureBclToFastq.pl \
+--input-dir $sequenceWorld/$run/Data/Intensities/BaseCalls \
+--output-dir  $sequenceWorld/$run/FastQ-Sequences/no-demul-Unaligned \
+--use-bases-mask Y*,Y*,Y*,Y*
+
+cd $sequenceWorld/$run/FastQ-Sequences/no-demul-Unaligned
+
+make -j $NSLOTS
+
+
+
+== Demultiplexing FASTQ files ==
+
+By now, you should have one directory per lane.
+
+[@colosse1 FastQ-Sequences]$ ls no-demul-Unaligned/Project_C0947ACXX/ -1
+Sample_lane1
+Sample_lane2
+Sample_lane3
+Sample_lane4
+Sample_lane5
+Sample_lane6
+Sample_lane7
+Sample_lane8
+
+To demultiplex lane 7, run this:
+
+	 ~/git-clones/FastDemultiplexer/FastDemultiplexer ../../SampleSheet-Nextera.csv Project_C0947ACXX/Sample_lane7 Demultiplexed > stat.txt
+
+This will generate 
+
+Demultiplexed/Project_A/Sample_X
+Demultiplexed/Project_A/Sample_Y
+Demultiplexed/Project_A/Sample_Z
+...
+
+and
+
+Demultiplexed/Undetermined_indices/Sample_lane7
+
+
