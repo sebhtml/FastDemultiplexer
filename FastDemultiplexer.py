@@ -332,9 +332,9 @@ class Demultiplexer:
 
 		outputDirectory=OutputDirectory(outputDirectoryPath,maxInFile)
 
-		processed=0
+		self.m_processed=0
 
-		stats={}
+		self.m_stats={}
 
 		while inputDirectory.hasNext():
 			sequenceTuple=inputDirectory.getNext()
@@ -345,7 +345,7 @@ class Demultiplexer:
 
 			outputDirectory.write(project,sample,lane,[sequenceTuple[0],sequenceTuple[3]])
 		
-			processed+=1
+			self.m_processed+=1
 
 			projectDir=project
 			sampleDir=sample
@@ -354,26 +354,31 @@ class Demultiplexer:
 				projectDir="Project_"+project
 				sampleDir="Sample_"+sample
 
-			key=projectDir+"/"+sampleDir
+			if projectDir not in self.m_stats:
+				self.m_stats[projectDir]={}
 
-			if key not in stats:
-				stats[key]=0
+			if sampleDir not in self.m_stats[projectDir]:
+				self.m_stats[projectDir][sampleDir]=0
 
-			stats[key]+=1
+			self.m_stats[projectDir][sampleDir]+=1
 
-			if processed%10000==0:
-				print "Processed: "+str(processed)
-				sys.stdout.flush()
-				break
+			if self.m_processed%10000==0:
+				self.printStatus()
 
 		outputDirectory.closeFiles()
 
-		print "Demultiplexed sequence pairs: "+str(processed)
+		self.printStatus()
 
-		print "Demultiplexed bins:"
+	def printStatus(self):
+		print "[Status]"
+		print "Demultiplexed sequence pairs: "+str(self.m_processed)
+		print ""
 
-		for i in stats.items():
-			print i[0]+"	"+str(i[1])
+		for i in self.m_stats.items():
+			print i[0]
+			for j in i[1].items():
+				print "	"+j[0]+"	"+str(j[1])
+		sys.stdout.flush()
 
 def main():
 	sheet=sys.argv[1]
