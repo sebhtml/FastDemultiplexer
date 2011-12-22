@@ -259,8 +259,10 @@ class InputDirectory:
 
 class FileWriter:
 	def __init__(self,name):
-		#self.m_file=gzip.open(name,"w")
-		self.m_file=open(name,"w")
+		if name.find(".gz")>=0:
+			self.m_file=gzip.open(name,"w")
+		else:
+			self.m_file=open(name,"w")
 	def write(self,data):
 		self.m_file.write(data)
 	def close(self):
@@ -316,8 +318,8 @@ class OutputDirectory:
 			self.makeDirectory(self.m_directory+"/"+projectDir)
 			self.makeDirectory(self.m_directory+"/"+projectDir+"/"+sampleDir)
 
-			file1=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R1_"+str(self.m_currentNumbers[key])+".fastq.gz"
-			file2=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R2_"+str(self.m_currentNumbers[key])+".fastq.gz"
+			file1=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R1_"+str(self.m_currentNumbers[key])+".fastq"
+			file2=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R2_"+str(self.m_currentNumbers[key])+".fastq"
 
 			self.m_files1[key]=FileWriter(file1)
 			self.m_files2[key]=FileWriter(file2)
