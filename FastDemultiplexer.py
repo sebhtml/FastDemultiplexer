@@ -75,6 +75,15 @@ class SampleSheet:
 			
 			self.m_entries.append(entry)
 
+			self.m_maxMismatches1=len(index1)/2
+			self.m_index1Length=len(index1)
+			self.m_maxMismatches2=len(index2)/2
+			self.m_index2Length=len(index2)
+
+
+		if len(self.m_entries)==0:
+			print "Error: the SampleSheet does not contain entries for the lane provided."
+			
 		self.makeIndex()
 
 	def getErrorList(self,base):
@@ -128,7 +137,10 @@ class SampleSheet:
 					self.m_index[key]=value
 
 		print "IndexSize= "+str(len(self.m_index))
-				
+		print "Index1Length= "+str(self.m_index1Length)
+		print "AllowedMismatchesInIndex1= "+str(self.m_maxMismatches1)
+		print "Index2Length= "+str(self.m_index2Length)
+		print "AllowedMismatchesInIndex2= "+str(self.m_maxMismatches2)
 
 	def compare(self,sequence1,sequence2):
 		score=0
@@ -149,15 +161,13 @@ class SampleSheet:
 		if key in self.m_index:
 			return self.m_index[key]
 
-		threshold=4
-
 		for entry in self.m_entries:
 			score1=self.compare(entry.getIndex1(),index1)
 			score2=self.compare(entry.getIndex2(),index2)
 
 			#print entry.getSample()+" "+str(score1)+" "+str(score2)
 
-			if score1<threshold and score2<threshold:
+			if score1<=self.m_maxMismatches1 and score2<=self.m_maxMismatches2:
 				return [entry.getProject(),entry.getSample()]
 
 		return ["Undetermined_indices","Sample_lane"+lane]
