@@ -3,12 +3,12 @@
 # author: Sébastien Boisvert
 # this is GPL code
 
-import profile
+#import profile
+import gzip
 import zlib
 import sys
 import os
 import os.path
-import gzip
 
 if len(sys.argv)!=4:
 	print "usage"
@@ -381,6 +381,7 @@ class Demultiplexer:
 
 			if processed%10000==0:
 				print "Processed: "+str(processed)
+				sys.stdout.flush()
 
 		outputDirectory.closeFiles()
 
@@ -394,11 +395,12 @@ def main():
 	demultiplexer=Demultiplexer(sheet,inputDir,outputDir,lane)
 
 if __name__=="__main__":
-	doProfiling=False
+#	doProfiling=False
 
-	if doProfiling:
-		profile.run('main()')
-	else:
-		main()
+#	if doProfiling:
+#		profile.run('main()')
+#	else:
+
+	main()
 
 
