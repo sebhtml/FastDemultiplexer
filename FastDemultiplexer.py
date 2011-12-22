@@ -371,13 +371,13 @@ class Demultiplexer:
 
 	def printStatus(self):
 		print "[Status]"
-		print "Demultiplexed sequence pairs: "+str(self.m_processed)
-		print ""
 
 		for i in self.m_stats.items():
-			print i[0]
 			for j in i[1].items():
-				print "	"+j[0]+"	"+str(j[1])
+				percent=100.0*j[1]/self.m_processed
+				print i[0]+"	"+j[0]+"	"+str(j[1])+"	"+str(percent)+"%"
+
+		print "All	All	"+str(self.m_processed)+"	100.00%"
 		sys.stdout.flush()
 
 def main():
