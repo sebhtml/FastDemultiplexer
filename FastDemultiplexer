@@ -1,17 +1,71 @@
 #!/usr/bin/python
 # encoding: UTF-8
 # author: Sébastien Boisvert
-# this is public domain
+# this is GPL code
 
-
-import gzip
+import profile
+import zlib
 import sys
 import os
+import os.path
+import gzip
 
 if len(sys.argv)!=4:
 	print "usage"
 	print "FastDemultilexer SampleSheet.csv Project_XYZ/Sample_lane1 Demultiplexed"
 	sys.exit(0)
+
+FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
+
+class GzFileReader:
+	def __init__(self,file):
+		print file
+		self.m_file=open(file)
+		self.m_bufferSize=4096*4096
+		
+		self.readHeader()
+
+		data=self.m_file.read(self.m_bufferSize)
+		self.m_buffer=self.decompress(data)
+
+
+	def readHeader(self):
+		magic = self.m_file.read(2)
+		method = ord( self.m_file.read(1))
+		flag = ord( self.m_file.read(1) )
+		mtime = self.m_file.read(4)
+		self.m_file.read(2)
+		
+		print str(flag)
+
+
+	def decompress(self,data):
+		return zlib.decompress(data)
+
+	def readline(self):
+		#if we have a new line in the buffer, return it.
+		i=0
+		theLength=len(self.m_buffer)
+		while i<theLength:
+			if self.m_buffer[i]=='\n':
+				line=self.m_buffer[0:i+1]
+				newBuffer=self.m_buffer[i+1:theLength]
+				self.m_buffer=newBuffer
+				return line
+
+		# we found no new line
+		# we need to read the file again
+	
+		data=m_file.read(self.m_bufferSize)
+	
+		# the last line may not have any new line
+		if len(data)==0:
+			return self.m_buffer
+
+		self.m_buffer=self.m_buffer+self.decompress(data)
+
+		# we already know how to do it
+		return self.readline()
 
 class Entry:
 	def __init__(self,project,sample,index1,index2):
@@ -115,6 +169,8 @@ class SampleSheet:
 				for j in index2ErrorList:
 					key=i+j
 					self.m_index[key]=value
+
+		print "IndexSize= "+str(len(self.m_index))
 				
 
 	def compare(self,sequence1,sequence2):
@@ -173,12 +229,16 @@ class FileReader:
 			self.m_file=gzip.open(filePath)
 		else:
 			self.m_file=open(filePath)
+		
+		self.m_buffer=self.m_file.readline().strip()
 
 	def hasNext(self):
-		return self.m_file
+		return len(self.m_buffer)>0
 
 	def getNext(self):
-		sequence=Sequence(self.m_file.readline(),self.m_file.readline(),self.m_file.readline(),self.m_file.readline())
+		sequence=Sequence(self.m_buffer,self.m_file.readline().strip(),self.m_file.readline().strip(),self.m_file.readline().strip())
+		
+		self.m_buffer=self.m_file.readline().strip()
 
 		return sequence
 
@@ -204,7 +264,7 @@ class InputDirectory:
 
 		while not self.m_reader1.hasNext() and self.m_current<len(self.m_r1Files):
 			self.m_current+=1
-			setReadersToCurrent()
+			self.setReadersToCurrent()
 
 	def setReadersToCurrent(self):
 		if not self.m_current<len(self.m_r1Files):
@@ -221,8 +281,9 @@ class InputDirectory:
 			return False
 
 		while not self.m_reader1.hasNext() and self.m_current<len(self.m_r1Files):
+			print "opening next files"
 			self.m_current+=1
-			setReadersToCurrent()
+			self.setReadersToCurrent()
 
 		return self.m_reader1.hasNext()
 
@@ -230,19 +291,82 @@ class InputDirectory:
 		return [self.m_reader1.getNext(),self.m_reader2.getNext(),self.m_reader3.getNext(),self.m_reader4.getNext()]
 
 class OutputDirectory:
-	def __init__(self,outputDirectory):
+	def __init__(self,outputDirectory,maxInFile):
 		self.m_directory=outputDirectory
+		self.m_max=maxInFile
+
+		self.makeDirectory(self.m_directory)
+		self.m_files1={}
+		self.m_files2={}
+
+		self.m_counts={}
+		self.m_currentNumbers={}
+
+	def makeDirectory(self,name):
+		if not os.path.exists(name):
+			os.mkdir(name)
+
+	def closeFiles(self):
+		for i in self.m_files1.items():
+			i[1].close()
+
+		for i in self.m_files2.items():
+			i[1].close()
 
 	def write(self,project,sample,lane,sequenceTuple):
 		#print "Writing to "+project+" "+sample+" "+lane
-		print sample+" "+sequenceTuple[0].getLine1().strip()
+
+		key=project+sample+lane
+
+		if (key not in self.m_files1) or self.m_counts[key]==self.m_max:
+
+			#close the old files
+			if key in self.m_files1 and self.m_counts[key]==self.m_max:
+				self.m_files1[key].close()
+				self.m_files2[key].close()
+				self.m_currentNumbers[key]+=1
+			else:
+				self.m_currentNumbers[key]=1
+
+			self.m_counts[key]=0
+
+			projectDir=project
+			sampleDir=sample
+
+			if project!="Undetermined_indices":
+				projectDir="Project_"+project
+				sampleDir="Sample_"+sample
+
+			self.makeDirectory(self.m_directory+"/"+projectDir)
+			self.makeDirectory(self.m_directory+"/"+projectDir+"/"+sampleDir)
+
+			file1=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R1_"+str(self.m_currentNumbers[key])+".fastq.gz"
+			file2=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R2_"+str(self.m_currentNumbers[key])+".fastq.gz"
+
+			self.m_files1[key]=gzip.open(file1,"w")
+			self.m_files2[key]=gzip.open(file2,"w")
+
+		f1=self.m_files1[key]
+		f1.write(sequenceTuple[0].getLine1()+"\n"+sequenceTuple[0].getLine2()+"\n"+sequenceTuple[0].getLine3()+"\n"+sequenceTuple[0].getLine4()+"\n")
+
+		f2=self.m_files2[key]
+		f2.write(sequenceTuple[1].getLine1()+"\n"+sequenceTuple[1].getLine2()+"\n"+sequenceTuple[1].getLine3()+"\n"+sequenceTuple[1].getLine4()+"\n")
+
+		self.m_counts[key]+=1
+
+		#print sample+" "+sequenceTuple[0].getLine1()
 
 
 class Demultiplexer:
 	def __init__(self,sampleSheet,inputDirectoryPath,outputDirectoryPath,lane):
 		sheet=SampleSheet(sampleSheet,lane)
 		inputDirectory=InputDirectory(inputDirectoryPath)
-		outputDirectory=OutputDirectory(outputDirectoryPath)
+
+		maxInFile=4000000
+
+		outputDirectory=OutputDirectory(outputDirectoryPath,maxInFile)
+
+		processed=0
 
 		while inputDirectory.hasNext():
 			sequenceTuple=inputDirectory.getNext()
@@ -251,8 +375,15 @@ class Demultiplexer:
 
 			[project,sample]=sheet.classify(index1,index2,lane)
 
-			outputDirectory.write(project,sample,"lane"+lane,[sequenceTuple[0],sequenceTuple[3]])
-			
+			outputDirectory.write(project,sample,lane,[sequenceTuple[0],sequenceTuple[3]])
+		
+			processed+=1
+
+			if processed%10000==0:
+				print "Processed: "+str(processed)
+
+		outputDirectory.closeFiles()
+
 def main():
 	sheet=sys.argv[1]
 	inputDir=sys.argv[2].replace("\/","")
@@ -263,6 +394,11 @@ def main():
 	demultiplexer=Demultiplexer(sheet,inputDir,outputDir,lane)
 
 if __name__=="__main__":
-	main()
+	doProfiling=False
+
+	if doProfiling:
+		profile.run('main()')
+	else:
+		main()
 
 
