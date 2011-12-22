@@ -15,57 +15,14 @@ if len(sys.argv)!=4:
 	print "FastDemultilexer SampleSheet.csv Project_XYZ/Sample_lane1 Demultiplexed"
 	sys.exit(0)
 
-FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
-
 class GzFileReader:
 	def __init__(self,file):
-		print file
-		self.m_file=open(file)
-		self.m_bufferSize=4096*4096
-		
-		self.readHeader()
-
-		data=self.m_file.read(self.m_bufferSize)
-		self.m_buffer=self.decompress(data)
-
-
-	def readHeader(self):
-		magic = self.m_file.read(2)
-		method = ord( self.m_file.read(1))
-		flag = ord( self.m_file.read(1) )
-		mtime = self.m_file.read(4)
-		self.m_file.read(2)
-		
-		print str(flag)
-
-
-	def decompress(self,data):
-		return zlib.decompress(data)
+		self.m_file=gzip.open(file)
 
 	def readline(self):
-		#if we have a new line in the buffer, return it.
-		i=0
-		theLength=len(self.m_buffer)
-		while i<theLength:
-			if self.m_buffer[i]=='\n':
-				line=self.m_buffer[0:i+1]
-				newBuffer=self.m_buffer[i+1:theLength]
-				self.m_buffer=newBuffer
-				return line
-
-		# we found no new line
-		# we need to read the file again
-	
-		data=m_file.read(self.m_bufferSize)
-	
-		# the last line may not have any new line
-		if len(data)==0:
-			return self.m_buffer
-
-		self.m_buffer=self.m_buffer+self.decompress(data)
-
-		# we already know how to do it
-		return self.readline()
+		return self.m_file.readline()
+	def close(self):
+		self.close()
 
 class Entry:
 	def __init__(self,project,sample,index1,index2):
@@ -226,7 +183,7 @@ class FileReader:
 	def __init__(self,filePath):
 		print "Opening "+filePath
 		if filePath.find(".gz")>=0:
-			self.m_file=gzip.open(filePath)
+			self.m_file=GzFileReader(filePath)
 		else:
 			self.m_file=open(filePath)
 		
@@ -290,6 +247,15 @@ class InputDirectory:
 	def getNext(self):
 		return [self.m_reader1.getNext(),self.m_reader2.getNext(),self.m_reader3.getNext(),self.m_reader4.getNext()]
 
+class FileWriter:
+	def __init__(self,name):
+		#self.m_file=gzip.open(name,"w")
+		self.m_file=open(name,"w")
+	def write(self,data):
+		self.m_file.write(data)
+	def close(self):
+		self.m_file.close()
+
 class OutputDirectory:
 	def __init__(self,outputDirectory,maxInFile):
 		self.m_directory=outputDirectory
@@ -343,8 +309,8 @@ class OutputDirectory:
 			file1=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R1_"+str(self.m_currentNumbers[key])+".fastq.gz"
 			file2=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R2_"+str(self.m_currentNumbers[key])+".fastq.gz"
 
-			self.m_files1[key]=gzip.open(file1,"w")
-			self.m_files2[key]=gzip.open(file2,"w")
+			self.m_files1[key]=FileWriter(file1)
+			self.m_files2[key]=FileWriter(file2)
 
 		f1=self.m_files1[key]
 		f1.write(sequenceTuple[0].getLine1()+"\n"+sequenceTuple[0].getLine2()+"\n"+sequenceTuple[0].getLine3()+"\n"+sequenceTuple[0].getLine4()+"\n")
@@ -368,6 +334,8 @@ class Demultiplexer:
 
 		processed=0
 
+		stats={}
+
 		while inputDirectory.hasNext():
 			sequenceTuple=inputDirectory.getNext()
 			index1=sequenceTuple[1].getLine2()
@@ -379,11 +347,33 @@ class Demultiplexer:
 		
 			processed+=1
 
+			projectDir=project
+			sampleDir=sample
+
+			if project!="Undetermined_indices":
+				projectDir="Project_"+project
+				sampleDir="Sample_"+sample
+
+			key=projectDir+"/"+sampleDir
+
+			if key not in stats:
+				stats[key]=0
+
+			stats[key]+=1
+
 			if processed%10000==0:
 				print "Processed: "+str(processed)
 				sys.stdout.flush()
+				break
 
 		outputDirectory.closeFiles()
+
+		print "Demultiplexed sequence pairs: "+str(processed)
+
+		print "Demultiplexed bins:"
+
+		for i in stats.items():
+			print i[0]+"	"+str(i[1])
 
 def main():
 	sheet=sys.argv[1]

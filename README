@@ -16,6 +16,12 @@ This demultiplexer is implemented in Python as a single executable.
 
 This is in the public domain (the "I don't care" way).
 
+== Input files ==
+
+The script works on gzip files, but the gzip implementation in
+Python is slow.
+
+Uncompressed files are better.
 
 == Conversion from BCL/CLOCS to FASTQ ==
 
@@ -59,7 +65,7 @@ Sample_lane8
 
 To demultiplex lane 7, run this:
 
-	 ~/git-clones/FastDemultiplexer/FastDemultiplexer ../../SampleSheet-Nextera.csv Project_C0947ACXX/Sample_lane7 Demultiplexed > stat.txt
+	 ~/git-clones/FastDemultiplexer/FastDemultiplexer.py ../../SampleSheet-Nextera.csv Project_C0947ACXX/Sample_lane7 Demultiplexed > stat.txt
 
 This will generate 
 
