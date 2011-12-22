@@ -64,6 +64,59 @@ class SampleSheet:
 			
 			self.m_entries.append(entry)
 
+		self.makeIndex()
+
+	def getErrorList(self,base):
+		list=[]
+
+		i=0
+		changes=['A','T','C','G','N']
+
+		theLength=len(base)
+
+		while i<theLength:
+			actual=base[i]
+			for j in changes:
+				if j==actual:
+					continue
+				before=base[0:i]
+				after=base[(i+1):(theLength)]
+				newSequence=before+j+after
+				list.append(newSequence)
+
+				#print "1MISS "+ newSequence
+			i+=1
+
+		return list
+
+	def makeIndex(self):
+		self.m_index={}
+		for entry in self.m_entries:
+			key=entry.getIndex1()+entry.getIndex2()
+			value=[entry.getProject(),entry.getSample()]
+			self.m_index[key]=value
+
+			# generate things with 1 error in index1
+			index1ErrorList=self.getErrorList(entry.getIndex1())
+	
+			for i in index1ErrorList:
+				key=i+entry.getIndex2()
+				self.m_index[key]=value
+
+			# generate things with 1 error in index2
+			index2ErrorList=self.getErrorList(entry.getIndex2())
+
+			for i in index2ErrorList:
+				key=entry.getIndex1()+i
+				self.m_index[key]=value
+
+			# generate things with 1 error in index1 and 1 error in index2
+			for i in index1ErrorList:
+				for j in index2ErrorList:
+					key=i+j
+					self.m_index[key]=value
+				
+
 	def compare(self,sequence1,sequence2):
 		score=0
 		i=0
@@ -78,6 +131,11 @@ class SampleSheet:
 		return score
 
 	def classify(self,index1,index2,lane):
+		key=index1+index2
+
+		if key in self.m_index:
+			return self.m_index[key]
+
 		threshold=4
 
 		for entry in self.m_entries:
@@ -121,6 +179,7 @@ class FileReader:
 
 	def getNext(self):
 		sequence=Sequence(self.m_file.readline(),self.m_file.readline(),self.m_file.readline(),self.m_file.readline())
+
 		return sequence
 
 class InputDirectory:
@@ -176,7 +235,7 @@ class OutputDirectory:
 
 	def write(self,project,sample,lane,sequenceTuple):
 		#print "Writing to "+project+" "+sample+" "+lane
-		print sample
+		print sample+" "+sequenceTuple[0].getLine1().strip()
 
 
 class Demultiplexer:
