@@ -1,0 +1,2 @@
+This two scripts are used to demultiplex Illumina basecalls (*.bcl and *.clocs files)
+using the CASAVA software suite distributed by Illumina, Inc.
