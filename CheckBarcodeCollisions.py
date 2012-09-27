@@ -2,6 +2,10 @@
 
 import sys
 
+if len(sys.argv)==1:
+	print("You must provide a CASAVA sample sheet.")
+	sys.exit(1)
+
 file=sys.argv[1]
 
 objects=[]
@@ -43,11 +47,10 @@ while i<len(objects):
 						matches2+=1
 				k+=1
 
-			print objects[i]+"	"+objects[j]+"	Matches1="+str(matches1)+"	Matches2="+str(matches2),
+			print(objects[i]+"	"+objects[j]+"	Matches1="+str(matches1)+"	Matches2="+str(matches2))
 			if matches1>=width/2 and matches2>=width/2:
-				print "Warning: collisions",
+				print("Warning: collisions")
 
-			print ""
 		j+=1
 	i+=1
 
