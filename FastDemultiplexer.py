@@ -28,8 +28,8 @@ import os
 import os.path
 
 if len(sys.argv)!=4:
-	print "usage"
-	print "FastDemultilexer SampleSheet.csv Project_XYZ/Sample_lane1 Demultiplexed"
+	print("usage")
+	print("FastDemultilexer SampleSheet.csv Project_XYZ/Sample_lane1 Demultiplexed")
 	sys.exit(0)
 
 class GzFileReader:
@@ -43,7 +43,6 @@ class GzFileReader:
 
 class Entry:
 	def __init__(self,project,sample,index1,index2):
-		#print "entry with "+project+" "+sample+" "+index1+" "+index2
 		self.m_project=project
 		self.m_sample=sample
 		self.m_index1=index1
@@ -99,7 +98,7 @@ class SampleSheet:
 
 
 		if len(self.m_entries)==0:
-			print "Error: the SampleSheet does not contain entries for the lane provided."
+			print("Error: the SampleSheet does not contain entries for the lane provided.")
 			
 		self.makeIndex()
 
@@ -121,7 +120,6 @@ class SampleSheet:
 				newSequence=before+j+after
 				list.append(newSequence)
 
-				#print "1MISS "+ newSequence
 			i+=1
 
 		return list
@@ -153,11 +151,11 @@ class SampleSheet:
 					key=i+j
 					self.m_index[key]=value
 
-		print "IndexSize= "+str(len(self.m_index))
-		print "Index1Length= "+str(self.m_index1Length)
-		print "AllowedMismatchesInIndex1= "+str(self.m_maxMismatches1)
-		print "Index2Length= "+str(self.m_index2Length)
-		print "AllowedMismatchesInIndex2= "+str(self.m_maxMismatches2)
+		print("IndexSize= "+str(len(self.m_index)))
+		print("Index1Length= "+str(self.m_index1Length))
+		print("AllowedMismatchesInIndex1= "+str(self.m_maxMismatches1))
+		print("Index2Length= "+str(self.m_index2Length))
+		print("AllowedMismatchesInIndex2= "+str(self.m_maxMismatches2))
 
 	def compare(self,sequence1,sequence2):
 		score=0
@@ -182,7 +180,6 @@ class SampleSheet:
 			score1=self.compare(entry.getIndex1(),index1)
 			score2=self.compare(entry.getIndex2(),index2)
 
-			#print entry.getSample()+" "+str(score1)+" "+str(score2)
 
 			if score1<=self.m_maxMismatches1 and score2<=self.m_maxMismatches2:
 				return [entry.getProject(),entry.getSample()]
@@ -191,7 +188,6 @@ class SampleSheet:
 
 class Sequence:
 	def __init__(self,line1,line2,line3,line4):
-		#print "Initiating "+line1
 		self.m_line1=line1
 		self.m_line2=line2
 		self.m_line3=line3
@@ -208,7 +204,7 @@ class Sequence:
 
 class FileReader:
 	def __init__(self,filePath):
-		print "Opening "+filePath
+		print("Opening "+filePath)
 		if filePath.find(".gz")>=0:
 			self.m_file=GzFileReader(filePath)
 		else:
@@ -265,7 +261,7 @@ class InputDirectory:
 			return False
 
 		while not self.m_reader1.hasNext() and self.m_current<len(self.m_r1Files):
-			print "opening next files"
+			print("opening next files")
 			self.m_current+=1
 			self.setReadersToCurrent()
 
@@ -309,7 +305,6 @@ class OutputDirectory:
 			i[1].close()
 
 	def write(self,project,sample,lane,sequenceTuple):
-		#print "Writing to "+project+" "+sample+" "+lane
 
 		key=project+sample+lane
 
@@ -349,7 +344,6 @@ class OutputDirectory:
 
 		self.m_counts[key]+=1
 
-		#print sample+" "+sequenceTuple[0].getLine1()
 
 
 class Demultiplexer:
@@ -399,14 +393,14 @@ class Demultiplexer:
 		self.printStatus()
 
 	def printStatus(self):
-		print "[Status]"
+		print("[Status]")
 
 		for i in self.m_stats.items():
 			for j in i[1].items():
 				percent=100.0*j[1]/self.m_processed
-				print i[0]+"	"+j[0]+"	"+str(j[1])+"	"+str(percent)+"%"
+				print(i[0]+"	"+j[0]+"	"+str(j[1])+"	"+str(percent)+"%")
 
-		print "All	All	"+str(self.m_processed)+"	100.00%"
+		print("All	All	"+str(self.m_processed)+"	100.00%")
 		sys.stdout.flush()
 
 def main():
