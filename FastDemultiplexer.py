@@ -405,10 +405,10 @@ class Demultiplexer:
 
 def main():
 	sheet=sys.argv[1]
-	inputDir=sys.argv[2].replace("\/","")
-	outputDir=sys.argv[3].replace("\/","")
+	inputDir=sys.argv[2]
+	outputDir=sys.argv[3]
 
-	lane=inputDir.split("lane")[1].strip()
+	lane=inputDir.split("lane")[1].strip().replace("/","")
 
 	demultiplexer=Demultiplexer(sheet,inputDir,outputDir,lane)
 
