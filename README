@@ -5,7 +5,7 @@ The Illumina HiSeq 1000 dumps .cif (intensity) files, .bcl (base calls) files an
 among others.
 
 Basically, for each cluster on the flow cell, there will be 4 sequences:
-R1, R2, R3, R4. R2 and R4 are the indexes, or bar-codes, and R1 and R2 are the 
+R1, R2, R3, R4. R2 and R3 are the indexes, or bar-codes, and R1 and R4 are the 
 sequences.
 
 CASAVA 1.8.2 only allows 1 mismatch per index (2 for dual-indexes).
