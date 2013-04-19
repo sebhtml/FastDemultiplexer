@@ -9,7 +9,7 @@ PATH=.:$PATH
 
 for i in $(seq 1 8)
 do
-	FastDemultiplexer.py SampleSheet.csv Project/Sample_lane$i Demultiplexed > l$i.log &
+	FastDemultiplexer.py SampleSheet.csv $i Project/Sample_lane$i Demultiplexed > l$i.log &
 done
 
 wait

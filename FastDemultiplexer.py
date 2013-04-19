@@ -27,11 +27,6 @@ import sys
 import os
 import os.path
 
-if len(sys.argv)!=4:
-	print("usage")
-	print("FastDemultilexer SampleSheet.csv Project_XYZ/Sample_lane1 Demultiplexed")
-	sys.exit(0)
-
 class GzFileReader:
 	def __init__(self,file):
 		self.m_file=gzip.open(file)
@@ -409,11 +404,26 @@ class Demultiplexer:
 		sys.stdout.flush()
 
 def main():
-	sheet=sys.argv[1]
-	inputDir=sys.argv[2]
-	outputDir=sys.argv[3]
+	if len(sys.argv)!=5:
+		print("usage")
+		print("FastDemultilexer SampleSheet.csv Project_XYZ/Sample_lane1 Demultiplexed")
+		sys.exit(0)
 
-	lane=inputDir.split("lane")[1].strip().replace("/","")
+	arguments = sys.argv
+	parameterIndex = 0
+	parameterIndex += 1
+
+	sheet = arguments[parameterIndex]
+	parameterIndex += 1
+
+	lane = arguments[parameterIndex]
+	parameterIndex += 1
+
+	inputDir = arguments[parameterIndex]
+	parameterIndex += 1
+
+	outputDir = arguments[parameterIndex]
+	parameterIndex += 1
 
 	demultiplexer=Demultiplexer(sheet,inputDir,outputDir,lane)
 
