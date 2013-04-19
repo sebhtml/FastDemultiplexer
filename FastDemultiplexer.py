@@ -211,7 +211,11 @@ class FileReader:
 		self.m_buffer=self.m_file.readline().strip()
 
 	def hasNext(self):
-		return len(self.m_buffer)>0
+		result = len(self.m_buffer)>0
+		if not result:
+			self.m_file.close()
+
+		return result
 
 	def getNext(self):
 		sequence=Sequence(self.m_buffer,self.m_file.readline().strip(),self.m_file.readline().strip(),self.m_file.readline().strip())
@@ -259,7 +263,6 @@ class InputDirectory:
 			return False
 
 		while not self.m_reader1.hasNext() and self.m_current<len(self.m_r1Files):
-			print("opening next files")
 			self.m_current+=1
 			self.setReadersToCurrent()
 
@@ -328,8 +331,14 @@ class OutputDirectory:
 			self.makeDirectory(self.m_directory+"/"+projectDir)
 			self.makeDirectory(self.m_directory+"/"+projectDir+"/"+sampleDir)
 
-			file1=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R1_"+str(self.m_currentNumbers[key])+".fastq.gz"
-			file2=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R2_"+str(self.m_currentNumbers[key])+".fastq.gz"
+			file1=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R1_"+str(self.m_currentNumbers[key])+".fastq"
+			file2=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R2_"+str(self.m_currentNumbers[key])+".fastq"
+
+			compressFiles = True
+
+			if compressFiles:
+				file1 += ".gz"
+				file2 += ".gz"
 
 			self.m_files1[key]=FileWriter(file1)
 			self.m_files2[key]=FileWriter(file2)

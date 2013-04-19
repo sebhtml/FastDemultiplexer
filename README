@@ -8,9 +8,13 @@ Basically, for each cluster on the flow cell, there will be 4 sequences:
 R1, R2, R3, R4. R2 and R3 are the indexes, or bar-codes, and R1 and R4 are the 
 sequences.
 
+There also may be only R1, R2, and R3 (RNA-Seq and ChIP-Seq)
+
 CASAVA 1.8.2 only allows 1 mismatch per index (2 for dual-indexes).
 
-This demultiplexer allows more.
+Furthermore CASAVA 1.8.2 has been released many years ago.
+
+This demultiplexer allows more data to be retrieved and is maintained too !
 
 This demultiplexer is implemented in Python as a single executable.
 
@@ -18,10 +22,11 @@ This is GPL work.
 
 == Input files ==
 
-The script works on gzip files, but the gzip implementation in
-Python is slow.
+The files can be in fastq or in fastq.gz.
 
-Uncompressed files are better.
+== Output files ==
+
+fastq.gz
 
 == Conversion from BCL/CLOCS to FASTQ ==
 
@@ -65,7 +70,7 @@ Sample_lane8
 
 To demultiplex lane 7, run this:
 
-	 ~/git-clones/FastDemultiplexer/FastDemultiplexer.py ../../SampleSheet-Nextera.csv Project_C0947ACXX/Sample_lane7 Demultiplexed > stat.txt
+	 FastDemultiplexer.py SampleSheet.csv 7 Project_C0947ACXX/Sample_lane7 Demultiplexed > stat.txt
 
 This will generate 
 
@@ -79,3 +84,6 @@ and
 Demultiplexed/Undetermined_indices/Sample_lane7
 
 
+== Author ==
+
+Sébastien Boisvert
