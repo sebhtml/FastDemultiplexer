@@ -34,7 +34,7 @@ class GzFileReader:
 	def readline(self):
 		return self.m_file.readline()
 	def close(self):
-		self.close()
+		self.m_file.close()
 
 class Entry:
 	def __init__(self,project,sample,index1,index2):
@@ -86,7 +86,7 @@ class SampleSheet:
 				index2=tokens2[1]
 
 			entry=Entry(project,sample,index1,index2)
-			
+
 			self.m_entries.append(entry)
 
 			self.m_maxMismatches1=len(index1)/2
@@ -97,7 +97,7 @@ class SampleSheet:
 
 		if len(self.m_entries)==0:
 			print("Error: the SampleSheet does not contain entries for the lane provided.")
-			
+
 		self.makeIndex()
 
 	def getErrorList(self,base):
@@ -131,7 +131,7 @@ class SampleSheet:
 
 			# generate things with 1 error in index1
 			index1ErrorList=self.getErrorList(entry.getIndex1())
-	
+
 			for i in index1ErrorList:
 				key=i+entry.getIndex2()
 				self.m_index[key]=value
@@ -165,7 +165,7 @@ class SampleSheet:
 			if sequence1[i]!=sequence2[i]:
 				score+=1
 			i+=1
-		
+
 		return score
 
 	def classify(self,index1,index2,lane):
@@ -207,7 +207,7 @@ class FileReader:
 			self.m_file=GzFileReader(filePath)
 		else:
 			self.m_file=open(filePath)
-		
+
 		self.m_buffer=self.m_file.readline().strip()
 
 	def hasNext(self):
@@ -219,7 +219,7 @@ class FileReader:
 
 	def getNext(self):
 		sequence=Sequence(self.m_buffer,self.m_file.readline().strip(),self.m_file.readline().strip(),self.m_file.readline().strip())
-		
+
 		self.m_buffer=self.m_file.readline().strip()
 
 		return sequence
@@ -256,7 +256,7 @@ class InputDirectory:
 		self.m_reader2=FileReader(self.m_directory+"/"+self.m_r2Files[self.m_current])
 		self.m_reader3=FileReader(self.m_directory+"/"+self.m_r3Files[self.m_current])
 		self.m_reader4=FileReader(self.m_directory+"/"+self.m_r4Files[self.m_current])
-			
+
 
 	def hasNext(self):
 		if self.m_current>=len(self.m_r1Files):
@@ -286,10 +286,14 @@ class OutputDirectory:
 	def __init__(self,outputDirectory,maxInFile):
 		self.m_directory=outputDirectory
 		self.m_max=maxInFile
+		self.m_maximumNumberOfStagedObjects = self.m_max / 2
 
 		self.makeDirectory(self.m_directory)
 		self.m_files1={}
 		self.m_files2={}
+
+		self.m_stagingArea1 = {}
+		self.m_stagingArea2 = {}
 
 		self.m_counts={}
 		self.m_currentNumbers={}
@@ -300,10 +304,11 @@ class OutputDirectory:
 
 	def closeFiles(self):
 		for i in self.m_files1.items():
-			i[1].close()
+			key = i[0]
+			self.flushWriteOperationsForKey(key, True)
+			self.m_files1[key].close()
+			self.m_files2[key].close()
 
-		for i in self.m_files2.items():
-			i[1].close()
 
 	def write(self,project,sample,lane,sequenceTuple):
 
@@ -334,7 +339,7 @@ class OutputDirectory:
 			file1=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R1_"+str(self.m_currentNumbers[key])+".fastq"
 			file2=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R2_"+str(self.m_currentNumbers[key])+".fastq"
 
-			compressFiles = True
+			compressFiles = False
 
 			if compressFiles:
 				file1 += ".gz"
@@ -343,15 +348,46 @@ class OutputDirectory:
 			self.m_files1[key]=FileWriter(file1)
 			self.m_files2[key]=FileWriter(file2)
 
+			self.m_stagingArea1[key] = []
+			self.m_stagingArea2[key] = []
+
+		self.m_stagingArea1[key].append(sequenceTuple[0])
+		self.m_stagingArea2[key].append(sequenceTuple[1])
+
+		self.flushWriteOperationsForKey(key, False)
+
+	def flushWriteOperationsForKey(self, key, forceOperation):
+
+		entryIterator = 0
+
 		f1=self.m_files1[key]
-		f1.write(sequenceTuple[0].getLine1()+"\n"+sequenceTuple[0].getLine2()+"\n"+sequenceTuple[0].getLine3()+"\n"+sequenceTuple[0].getLine4()+"\n")
-
 		f2=self.m_files2[key]
-		f2.write(sequenceTuple[1].getLine1()+"\n"+sequenceTuple[1].getLine2()+"\n"+sequenceTuple[1].getLine3()+"\n"+sequenceTuple[1].getLine4()+"\n")
 
-		self.m_counts[key]+=1
+		stagedEntries = len(self.m_stagingArea1[key])
 
 
+
+		proceed = False
+
+		if stagedEntries  == self.m_maximumNumberOfStagedObjects or forceOperation:
+			proceed = True
+
+		if stagedEntries == 0:
+			proceed = False
+
+		if not proceed:
+			return False
+
+		while entryIterator < stagedEntries:
+			entry1 = self.m_stagingArea1[key][entryIterator]
+			entry2 = self.m_stagingArea2[key][entryIterator]
+			f1.write(entry1.getLine1()+"\n"+entry1.getLine2()+"\n"+entry1.getLine3()+"\n"+entry1.getLine4()+"\n")
+			f2.write(entry2.getLine1()+"\n"+entry2.getLine2()+"\n"+entry2.getLine3()+"\n"+entry2.getLine4()+"\n")
+
+			self.m_counts[key]+=1
+			entryIterator += 1
+
+		return True
 
 class Demultiplexer:
 	def __init__(self,sampleSheet,inputDirectoryPath,outputDirectoryPath,lane):
@@ -374,7 +410,7 @@ class Demultiplexer:
 			[project,sample]=sheet.classify(index1,index2,lane)
 
 			outputDirectory.write(project,sample,lane,[sequenceTuple[0],sequenceTuple[3]])
-		
+
 			self.m_processed+=1
 
 			projectDir=project
