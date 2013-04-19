@@ -5,7 +5,7 @@
 '''
 	FastDemultiplexer: a better demultiplexer for Illumina HiSeq
 sequencers
-	Copyright (C) 2011, 2012 Sébastien Boisvert
+	Copyright (C) 2011, 2012, 2013Sébastien Boisvert
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -272,7 +272,7 @@ class InputDirectory:
 
 class FileWriter:
 	def __init__(self,name):
-		if name.find(".gz")>=0:
+		if name.find(".fastq.gz")>=0:
 			self.m_file=gzip.open(name,"w")
 		else:
 			self.m_file=open(name,"w")
@@ -330,8 +330,8 @@ class OutputDirectory:
 			self.makeDirectory(self.m_directory+"/"+projectDir)
 			self.makeDirectory(self.m_directory+"/"+projectDir+"/"+sampleDir)
 
-			file1=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R1_"+str(self.m_currentNumbers[key])+".fastq"
-			file2=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R2_"+str(self.m_currentNumbers[key])+".fastq"
+			file1=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R1_"+str(self.m_currentNumbers[key])+".fastq.gz"
+			file2=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R2_"+str(self.m_currentNumbers[key])+".fastq.gz"
 
 			self.m_files1[key]=FileWriter(file1)
 			self.m_files2[key]=FileWriter(file2)
