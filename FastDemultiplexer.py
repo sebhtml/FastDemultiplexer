@@ -202,7 +202,6 @@ class Sequence:
 
 class FileReader:
 	def __init__(self,filePath):
-		print("Opening "+filePath)
 		if filePath.find(".gz")>=0:
 			self.m_file=GzFileReader(filePath)
 		else:
@@ -283,10 +282,11 @@ class FileWriter:
 		self.m_file.close()
 
 class OutputDirectory:
-	def __init__(self,outputDirectory,maxInFile):
+	def __init__(self,outputDirectory):
 		self.m_directory=outputDirectory
-		self.m_max=maxInFile
-		self.m_maximumNumberOfStagedObjects = self.m_max / 2
+		self.m_max = 4000000
+
+		self.m_maximumNumberOfStagedObjects = 4000
 
 		self.makeDirectory(self.m_directory)
 		self.m_files1={}
@@ -339,7 +339,7 @@ class OutputDirectory:
 			file1=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R1_"+str(self.m_currentNumbers[key])+".fastq"
 			file2=self.m_directory+"/"+projectDir+"/"+sampleDir+"/"+sample+"_Lane"+lane+"_R2_"+str(self.m_currentNumbers[key])+".fastq"
 
-			compressFiles = False
+			compressFiles = True
 
 			if compressFiles:
 				file1 += ".gz"
@@ -365,8 +365,6 @@ class OutputDirectory:
 
 		stagedEntries = len(self.m_stagingArea1[key])
 
-
-
 		proceed = False
 
 		if stagedEntries  == self.m_maximumNumberOfStagedObjects or forceOperation:
@@ -378,14 +376,22 @@ class OutputDirectory:
 		if not proceed:
 			return False
 
+		buffer1 = ""
+		buffer2 = ""
+
 		while entryIterator < stagedEntries:
 			entry1 = self.m_stagingArea1[key][entryIterator]
 			entry2 = self.m_stagingArea2[key][entryIterator]
-			f1.write(entry1.getLine1()+"\n"+entry1.getLine2()+"\n"+entry1.getLine3()+"\n"+entry1.getLine4()+"\n")
-			f2.write(entry2.getLine1()+"\n"+entry2.getLine2()+"\n"+entry2.getLine3()+"\n"+entry2.getLine4()+"\n")
+			line1 = entry1.getLine1()+"\n"+entry1.getLine2()+"\n"+entry1.getLine3()+"\n"+entry1.getLine4()+"\n"
+			buffer1 += line1 
+			line2 = entry2.getLine1()+"\n"+entry2.getLine2()+"\n"+entry2.getLine3()+"\n"+entry2.getLine4()+"\n"
+			buffer2 += line2
 
 			self.m_counts[key]+=1
 			entryIterator += 1
+
+		f1.write(buffer1)
+		f2.write(buffer2)
 
 		return True
 
@@ -394,9 +400,7 @@ class Demultiplexer:
 		sheet=SampleSheet(sampleSheet,lane)
 		inputDirectory=InputDirectory(inputDirectoryPath)
 
-		maxInFile=4000000
-
-		outputDirectory=OutputDirectory(outputDirectoryPath,maxInFile)
+		outputDirectory=OutputDirectory(outputDirectoryPath)
 
 		self.m_processed=0
 

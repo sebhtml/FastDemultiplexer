@@ -1,2 +1,12 @@
 
 see /rap/nne-790-ab/projects/FastDemultiplexer-devel for sample data
+
+
+
+time ./Demultiplex.sh  @ 1f09a93cb1   fastq output
+
+real    1m6.147s
+user    1m4.140s
+sys     0m1.012s
+
+
