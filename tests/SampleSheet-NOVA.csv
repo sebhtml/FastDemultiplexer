@@ -1,0 +1,30 @@
+# comment
+
+FCID,Lane,SampleID,SampleRef,Index,Description,Control,Recipe,Operator,SampleProject
+000000000-A3TG4,1,H0607-158-A40,,TAAGGCGA-TAGATCGC,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H0607-158-B40,,CGTACTAG-TAGATCGC,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H0708-072-A40,,AGGCAGAA-TAGATCGC,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H0708-072-B40,,TCCTGAGC-TAGATCGC,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H0809-072-A40,,GGACTCCT-TAGATCGC,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H0809-072-B40,,TAGGCATG-TAGATCGC,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H0809-087-A40,,TAAGGCGA-CTCTCTAT,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H0809-087-B40,,CGTACTAG-CTCTCTAT,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H0910-200-A40,,AGGCAGAA-CTCTCTAT,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H0910-200-B40,,TCCTGAGC-CTCTCTAT,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H0910-201-A40,,GGACTCCT-CTCTCTAT,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H0910-201-B40,,TAGGCATG-CTCTCTAT,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H1213-018-A40,,TAAGGCGA-AGAGTAGA,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H1213-018-B40,,CGTACTAG-AGAGTAGA,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H1213-076-2-A3,,AGGCAGAA-AGAGTAGA,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H1213-076-2-B3,,TCCTGAGC-AGAGTAGA,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H1213-076-2-C3,,GGACTCCT-AGAGTAGA,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H1213-076-A50,,TAGGCATG-AGAGTAGA,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H1213-076-B50,,TAAGGCGA-TATCCTCT,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H1213-077-2-A3,,CGTACTAG-TATCCTCT,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H1213-077-2-B3,,AGGCAGAA-TATCCTCT,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H1213-077-2-C3,,TCCTGAGC-TATCCTCT,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H1213-077-A50,,GGACTCCT-TATCCTCT,,N,PE_indexing,Unknown,VirusRespiratoires
+000000000-A3TG4,1,H1213-077-B50,,TAGGCATG-TATCCTCT,,N,PE_indexing,Unknown,VirusRespiratoires
+
+
+# comment
