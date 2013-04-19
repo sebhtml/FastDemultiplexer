@@ -180,7 +180,11 @@ class SampleSheet:
 			score1=self.getMismatches(entry.getIndex1(),index1)
 			score2=self.getMismatches(entry.getIndex2(),index2)
 
-			if score1 < best1 and score2 < best2:
+			# both most be at least as good
+			# and at least one of them must be better
+			if ( ( score1 <= best1 and score2 <= best2 ) and 
+				( score1 < best1 or score2 < best2 )):
+
 				best1 = score1
 				best2 = score2
 				bestEntry = entry
