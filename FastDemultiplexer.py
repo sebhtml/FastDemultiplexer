@@ -470,7 +470,7 @@ class Demultiplexer:
 def main():
 	if len(sys.argv)!=5:
 		print("usage")
-		print("FastDemultilexer SampleSheet.csv Project_XYZ/Sample_lane1 Demultiplexed")
+		print("FastDemultilexer SampleSheet.csv lane Project_XYZ/Sample_lane1 Demultiplexed")
 		sys.exit(0)
 
 	arguments = sys.argv
