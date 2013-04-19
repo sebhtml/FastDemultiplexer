@@ -68,6 +68,9 @@ class SampleSheet:
 		self.m_entries=[]
 
 		for line in open(sampleSheet):
+			if line[0] == '#':
+				continue
+
 			tokens=line.split(",")
 			if len(tokens)<4:
 				continue
