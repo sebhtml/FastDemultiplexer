@@ -89,9 +89,7 @@ class SampleSheet:
 
 			self.m_entries.append(entry)
 
-			self.m_maxMismatches1=len(index1)/2
 			self.m_index1Length=len(index1)
-			self.m_maxMismatches2=len(index2)/2
 			self.m_index2Length=len(index2)
 
 
@@ -151,11 +149,9 @@ class SampleSheet:
 
 		print("IndexSize= "+str(len(self.m_index)))
 		print("Index1Length= "+str(self.m_index1Length))
-		print("AllowedMismatchesInIndex1= "+str(self.m_maxMismatches1))
 		print("Index2Length= "+str(self.m_index2Length))
-		print("AllowedMismatchesInIndex2= "+str(self.m_maxMismatches2))
 
-	def compare(self,sequence1,sequence2):
+	def getMismatches(self,sequence1,sequence2):
 		score=0
 		i=0
 		len1=len(sequence1)
@@ -171,18 +167,33 @@ class SampleSheet:
 	def classify(self,index1,index2,lane):
 		key=index1+index2
 
+		# use the hash table to classify it in a
+		# fast way
 		if key in self.m_index:
 			return self.m_index[key]
 
+		best1 = 999
+		best2 = 999
+		bestEntry = None
+
 		for entry in self.m_entries:
-			score1=self.compare(entry.getIndex1(),index1)
-			score2=self.compare(entry.getIndex2(),index2)
+			score1=self.getMismatches(entry.getIndex1(),index1)
+			score2=self.getMismatches(entry.getIndex2(),index2)
 
+			if score1 < best1 and score2 < best2:
+				best1 = score1
+				best2 = score2
+				bestEntry = entry
 
-			if score1<=self.m_maxMismatches1 and score2<=self.m_maxMismatches2:
-				return [entry.getProject(),entry.getSample()]
+			# at least two entries have the same number of
+			# mismatches
+			elif score1 == best1 and score2 == best2:
+				bestEntry = None
 
-		return ["Undetermined_indices","Sample_lane"+lane]
+		if bestEntry == None:
+			return ["Undetermined_indices","Sample_lane"+lane]
+		else:
+			return [entry.getProject(),entry.getSample()]
 
 class Sequence:
 	def __init__(self,line1,line2,line3,line4):
