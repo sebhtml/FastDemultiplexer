@@ -1,3 +1,11 @@
+This is a read demultiplexer.
+
+
+Pros:
+
+* Can manage a lot of mismatches
+
+
 == Motivation ==
 
 The Illumina HiSeq 1000 dumps .cif (intensity) files, .bcl (base calls) files and 

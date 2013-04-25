@@ -54,6 +54,7 @@ class Entry:
 
 class SampleSheet:
 	def __init__(self,sampleSheet,lane):
+		self.error = False
 		# C0947ACXX,4,CQDM1-1,No,TAAGGCGA-TAGATCGC,P2J0-1,N,PE_indexing,LR,CQDM
 		projectColumn=9
 		sampleColumn=2
@@ -95,8 +96,14 @@ class SampleSheet:
 
 		if len(self.m_entries)==0:
 			print("Error: the SampleSheet does not contain entries for the lane provided.")
+			print("Lane is: " + lane)
+			self.error = True
+			return
 
 		self.makeIndex()
+
+	def hasError(self):
+		return self.error
 
 	def getErrorList(self,base):
 		list=[]
@@ -150,6 +157,8 @@ class SampleSheet:
 		print("IndexSize= "+str(len(self.m_index)))
 		print("Index1Length= "+str(self.m_index1Length))
 		print("Index2Length= "+str(self.m_index2Length))
+
+		return True
 
 	def getMismatches(self,sequence1,sequence2):
 		score=0
@@ -413,6 +422,10 @@ class OutputDirectory:
 class Demultiplexer:
 	def __init__(self,sampleSheet,inputDirectoryPath,outputDirectoryPath,lane):
 		sheet=SampleSheet(sampleSheet,lane)
+
+		if sheet.hasError():
+			return
+
 		inputDirectory=InputDirectory(inputDirectoryPath)
 
 		outputDirectory=OutputDirectory(outputDirectoryPath)
