@@ -124,62 +124,77 @@ class SampleSheet:
 	def hasError(self):
 		return self.m_error
 
-	def getErrorList(self,base):
-		list=[]
+# returns a list of sequence based on template with mismatches when compared to origin
+# this code actually returns duplicates too.
+# we don't really care about that.
+	def getErrorList(self, origin, template, mismatches, list):
 
-		i=0
+		if mismatches == 0:
+			list.append(template)
+			return
+
+		position = 0
 		changes=['A','T','C','G','N']
 
-		theLength=len(base)
+		theLength=len(template)
 
-		while i<theLength:
-			actual=base[i]
+		while position < theLength:
+			actual=origin[position]
 			for j in changes:
+
+				# the change restore the original thing...
 				if j==actual:
 					continue
-				before=base[0:i]
-				after=base[(i+1):(theLength)]
+
+				before=template[0:position]
+				after=template[(position+1):(theLength)]
 				newSequence=before+j+after
-				list.append(newSequence)
 
-			i+=1
+				self.getErrorList(origin, newSequence, mismatches - 1, list)
 
-		return list
+			position += 1
 
 	def makeIndex(self):
+
+		print("[makeIndex] Index1Length= "+str(self.m_index1Length))
+		print("[makeIndex] Index2Length= "+str(self.m_index2Length))
+
 		self.m_index={}
 		for entry in self.m_entries:
-			key=entry.getIndex1()+entry.getIndex2()
-			self.m_index[key] = entry
+			rule = [0, 1, 2, 3]
 
-			# generate things with 1 error in index1
-			index1ErrorList=self.getErrorList(entry.getIndex1())
+			for i in rule:
+				for j in rule:
+					if i > 1 and j > 1:
+						continue
 
-			for i in index1ErrorList:
-				key=i+entry.getIndex2()
-				self.m_index[key] = entry
+					self.addEntriesInIndex(self.m_index, entry.getIndex1(), entry.getIndex2(), i, j, entry)
 
-			# generate things with 1 error in index2
-			index2ErrorList=self.getErrorList(entry.getIndex2())
+			# 2, 2 is too prohibitive
+			#addEntriesInIndex(self.m_index, entry.getIndex1(), entry.getIndex2(), 2, 2, entry)
 
-			for i in index2ErrorList:
-				key=entry.getIndex1()+i
-				self.m_index[key] = entry
 
-			# generate things with 1 error in index1 and 1 error in index2
-			for i in index1ErrorList:
-				for j in index2ErrorList:
-					key=i+j
-					self.m_index[key] = entry
-
+		print("[makeIndex] IndexSize= "+str(len(self.m_index)))
 		if self.m_debug:
-			print("[makeIndex] IndexSize= "+str(len(self.m_index)))
-			print("[makeIndex] Index1Length= "+str(self.m_index1Length))
-			print("[makeIndex] Index2Length= "+str(self.m_index2Length))
 			for i in self.m_index.items():
 				print("[makeIndex] " + i[0] + " ---> " + str(i[1]))
 
 		return True
+
+	def addEntriesInIndex(self, index, sequence1, sequence2, mismatches1, mismatches2, target):
+		objects1 = []
+		self.getErrorList(sequence1, sequence1, mismatches1, objects1)
+		objects2 = []
+		self.getErrorList(sequence2, sequence2, mismatches2, objects2)
+
+		count = 0
+		for i in objects1:
+			for j in objects2:
+				key = i + j
+				index[key] = target
+				count += 1
+
+		print("[addEntriesInIndex] added " + str(count) + " entries with mismatch configuration " + str(mismatches1)+ "," + str(mismatches2))
 
 	def getMismatches(self,sequence1,sequence2):
 
