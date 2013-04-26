@@ -55,6 +55,7 @@ class Entry:
 class SampleSheet:
 	def __init__(self,sampleSheet,lane):
 		self.m_debug = False
+		self.m_conservativeMode = False
 		#self.m_debug = True
 		self.m_error = False
 		# C0947ACXX,4,CQDM1-1,No,TAAGGCGA-TAGATCGC,P2J0-1,N,PE_indexing,LR,CQDM
@@ -64,6 +65,8 @@ class SampleSheet:
 		laneColumn=1
 
 		self.m_entries=[]
+
+		allocatedKeys = {}
 
 		for line in open(sampleSheet):
 			if line[0] == '#':
@@ -97,6 +100,14 @@ class SampleSheet:
 				print("Warning: " + sample + " has no index in sheet")
 				continue
 
+			key = index1 + index2
+
+			if key in allocatedKeys:
+				print("Warning: " + sample + " uses a key already in use by another sample")
+				# don't continue on this
+	
+			allocatedKeys[key]=1
+			
 			self.m_entries.append(entry)
 
 			self.m_index1Length = lengthOfIndex1
@@ -139,28 +150,27 @@ class SampleSheet:
 		self.m_index={}
 		for entry in self.m_entries:
 			key=entry.getIndex1()+entry.getIndex2()
-			value=[entry.getProject(),entry.getSample()]
-			self.m_index[key]=value
+			self.m_index[key] = entry
 
 			# generate things with 1 error in index1
 			index1ErrorList=self.getErrorList(entry.getIndex1())
 
 			for i in index1ErrorList:
 				key=i+entry.getIndex2()
-				self.m_index[key]=value
+				self.m_index[key] = entry
 
 			# generate things with 1 error in index2
 			index2ErrorList=self.getErrorList(entry.getIndex2())
 
 			for i in index2ErrorList:
 				key=entry.getIndex1()+i
-				self.m_index[key]=value
+				self.m_index[key] = entry
 
 			# generate things with 1 error in index1 and 1 error in index2
 			for i in index1ErrorList:
 				for j in index2ErrorList:
 					key=i+j
-					self.m_index[key]=value
+					self.m_index[key] = entry
 
 		if self.m_debug:
 			print("[makeIndex] IndexSize= "+str(len(self.m_index)))
@@ -172,6 +182,7 @@ class SampleSheet:
 		return True
 
 	def getMismatches(self,sequence1,sequence2):
+
 		score=0
 		i=0
 		len1=len(sequence1)
@@ -182,9 +193,24 @@ class SampleSheet:
 				score+=1
 			i+=1
 
+		if self.m_debug:
+			print("[getMismatches] " + sequence1 + " " + sequence2 + " " + str(score))
+
 		return score
 
 	def classify(self,index1,index2,lane):
+
+		result = self.classifyWithTheIndex(index1, index2, lane)
+
+		if result != None:
+			return result
+
+		return self.classifyWithBruteForce(index1, index2, lane)
+
+	def classifyWithTheIndex(self, index1, index2, lane):
+		if self.m_debug:
+			print("[classify] index1: " + index1 + " index2: " + index2)
+
 		key=index1+index2
 
 		if self.m_index2Length == 0:
@@ -201,8 +227,12 @@ class SampleSheet:
 				print("[classify] using fast-path with index")
 			return self.m_index[key]
 
-		best1 = 999
-		best2 = 999
+		return None
+
+	def classifyWithBruteForce(self, index1, index2, lane):
+
+		best1 = 9999
+		best2 = 9999
 		bestEntry = None
 
 		for entry in self.m_entries:
@@ -220,22 +250,25 @@ class SampleSheet:
 				best1 = score1
 				best2 = score2
 				bestEntry = entry
+				
+				if self.m_debug:
+					print("[classify] new best is " + entry.getSample())
 
 			# at least two entries have the same number of
 			# mismatches
 			elif score1 == best1 and score2 == best2:
 				bestEntry = None
 
-		if best1 >= self.m_index1Length/2 and self.m_index1Length != 0:
+		if best1 >= self.m_index1Length/2 and self.m_index1Length != 0 and self.m_conservativeMode:
 			bestEntry = None
 
-		if best2 >= self.m_index2Length/2 and self.m_index2Length != 0:
+		if best2 >= self.m_index2Length/2 and self.m_index2Length != 0 and self.m_conservativeMode:
 			bestEntry = None
 
-		if bestEntry == None:
-			return ["Undetermined_indices","Sample_lane"+lane]
-		else:
-			return [entry.getProject(),entry.getSample()]
+		if self.m_debug:
+			print("best1: " + str(best1) + " best2: " + str(best2) + " with " + entry.getSample())
+
+		return bestEntry
 
 class Sequence:
 	def __init__(self,line1,line2,line3,line4):
@@ -494,7 +527,13 @@ class Demultiplexer:
 			index1=sequenceTuple[1].getLine2()
 			index2=sequenceTuple[2].getLine2()
 
-			[project,sample]=sheet.classify(index1,index2,lane)
+			project = "Undetermined_indices"
+			sample = "Sample_lane" + lane
+			entry = sheet.classify(index1,index2,lane)
+
+			if entry != None:
+				project = entry.getProject()
+				sample = entry.getSample()
 
 			if self.m_debug:
 				print("index1= " + index1 + " index2= " + index2 + " lane= " + lane + " result: " + sample)
