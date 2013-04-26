@@ -288,14 +288,23 @@ class InputDirectory:
 
 		self.m_current=0
 
+		self.m_hasError = False
 		self.setReadersToCurrent()
+
+		if self.m_hasError:
+			print("Error: No sequence file found !")
+			return
 
 		while not self.m_reader1.hasNext() and self.m_current<len(self.m_r1Files):
 			self.m_current+=1
 			self.setReadersToCurrent()
 
+	def hasError(self):
+		return self.m_hasError
+
 	def setReadersToCurrent(self):
 		if not self.m_current<len(self.m_r1Files):
+			self.m_hasError = True
 			return
 
 		self.m_reader1=FileReader(self.m_directory+"/"+self.m_r1Files[self.m_current])
@@ -452,6 +461,9 @@ class Demultiplexer:
 			return
 
 		inputDirectory=InputDirectory(inputDirectoryPath)
+
+		if inputDirectory.hasError():
+			return
 
 		outputDirectory=OutputDirectory(outputDirectoryPath)
 
