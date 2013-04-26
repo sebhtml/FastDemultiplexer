@@ -55,7 +55,7 @@ class Entry:
 class SampleSheet:
 	def __init__(self,sampleSheet,lane):
 		self.m_debug = False
-		self.m_conservativeMode = False
+		self.m_conservativeMode = True
 		#self.m_debug = True
 		self.m_error = False
 		# C0947ACXX,4,CQDM1-1,No,TAAGGCGA-TAGATCGC,P2J0-1,N,PE_indexing,LR,CQDM
