@@ -5,7 +5,7 @@
 '''
 	FastDemultiplexer: a better demultiplexer for Illumina HiSeq
 sequencers
-	Copyright (C) 2011, 2012, 2013Sébastien Boisvert
+	Copyright (C) 2011, 2012, 2013 Sébastien Boisvert
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ sequencers
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-#import profile
+import profile
 import gzip
 import zlib
 import sys
@@ -90,11 +90,17 @@ class SampleSheet:
 
 			entry=Entry(project,sample,index1,index2)
 
+			lengthOfIndex1 = len(index1)
+			lengthOfIndex2 = len(index2)
+
+			if lengthOfIndex1 == 0 and lengthOfIndex2 == 0:
+				print("Warning: " + sample + " has no index in sheet")
+				continue
+
 			self.m_entries.append(entry)
 
-			self.m_index1Length=len(index1)
-			self.m_index2Length=len(index2)
-
+			self.m_index1Length = lengthOfIndex1
+			self.m_index2Length = lengthOfIndex2
 
 		if len(self.m_entries)==0:
 			print("Error: the SampleSheet does not contain entries for the lane provided.")
@@ -339,10 +345,11 @@ class FileWriter:
 
 class OutputDirectory:
 	def __init__(self,outputDirectory):
+		self.m_debug = False
 		self.m_directory=outputDirectory
-		self.m_max = 4000000
+		self.m_maximumNumberOfSequencesPerFile = 4000000
 
-		self.m_maximumNumberOfStagedObjects = 4000
+		self.m_maximumNumberOfStagedObjects = 50000
 
 		self.makeDirectory(self.m_directory)
 		self.m_files1={}
@@ -370,10 +377,10 @@ class OutputDirectory:
 
 		key=project+sample+lane
 
-		if (key not in self.m_files1) or self.m_counts[key]==self.m_max:
+		if (key not in self.m_files1) or self.m_counts[key]==self.m_maximumNumberOfSequencesPerFile:
 
 			#close the old files
-			if key in self.m_files1 and self.m_counts[key]==self.m_max:
+			if key in self.m_files1 and self.m_counts[key]==self.m_maximumNumberOfSequencesPerFile:
 				self.m_files1[key].close()
 				self.m_files2[key].close()
 				self.m_currentNumbers[key]+=1
@@ -402,6 +409,9 @@ class OutputDirectory:
 				file2 += ".gz"
 
 			self.m_files1[key]=FileWriter(file1)
+
+			if self.m_debug:
+				print("[write] opening " + key + " --> " + file1)
 			self.m_files2[key]=FileWriter(file2)
 
 			self.m_stagingArea1[key] = []
@@ -423,17 +433,22 @@ class OutputDirectory:
 
 		proceed = False
 
-		if stagedEntries  == self.m_maximumNumberOfStagedObjects or forceOperation:
+		if stagedEntries  >= self.m_maximumNumberOfStagedObjects or forceOperation:
 			proceed = True
 
 		if stagedEntries == 0:
 			proceed = False
 
 		if not proceed:
+			if self.m_debug and False:
+				print("[flushWriteOperationsForKey] key: " + key + " stagedEntries: " + str(stagedEntries))
 			return False
 
 		buffer1 = ""
 		buffer2 = ""
+
+		if self.m_debug:
+			print("[flushWriteOperationsForKey] flushing " + str(stagedEntries) + " for " + key)
 
 		while entryIterator < stagedEntries:
 			entry1 = self.m_stagingArea1[key][entryIterator]
@@ -448,6 +463,9 @@ class OutputDirectory:
 
 		f1.write(buffer1)
 		f2.write(buffer2)
+
+		self.m_stagingArea1[key] = []
+		self.m_stagingArea2[key] = []
 
 		return True
 
@@ -545,12 +563,11 @@ def main():
 	demultiplexer=Demultiplexer(sheet,inputDir,outputDir,lane)
 
 if __name__=="__main__":
-#	doProfiling=False
+	doProfiling = False
 
-#	if doProfiling:
-#		profile.run('main()')
-#	else:
-
-	main()
+	if doProfiling:
+		profile.run('main()')
+	else:
+		main()
 
 
