@@ -54,7 +54,9 @@ class Entry:
 
 class SampleSheet:
 	def __init__(self,sampleSheet,lane):
-		self.error = False
+		self.m_debug = False
+		#self.m_debug = True
+		self.m_error = False
 		# C0947ACXX,4,CQDM1-1,No,TAAGGCGA-TAGATCGC,P2J0-1,N,PE_indexing,LR,CQDM
 		projectColumn=9
 		sampleColumn=2
@@ -97,13 +99,13 @@ class SampleSheet:
 		if len(self.m_entries)==0:
 			print("Error: the SampleSheet does not contain entries for the lane provided.")
 			print("Lane is: " + lane)
-			self.error = True
+			self.m_error = True
 			return
 
 		self.makeIndex()
 
 	def hasError(self):
-		return self.error
+		return self.m_error
 
 	def getErrorList(self,base):
 		list=[]
@@ -154,9 +156,12 @@ class SampleSheet:
 					key=i+j
 					self.m_index[key]=value
 
-		print("IndexSize= "+str(len(self.m_index)))
-		print("Index1Length= "+str(self.m_index1Length))
-		print("Index2Length= "+str(self.m_index2Length))
+		if self.m_debug:
+			print("[makeIndex] IndexSize= "+str(len(self.m_index)))
+			print("[makeIndex] Index1Length= "+str(self.m_index1Length))
+			print("[makeIndex] Index2Length= "+str(self.m_index2Length))
+			for i in self.m_index.items():
+				print("[makeIndex] " + i[0] + " ---> " + str(i[1]))
 
 		return True
 
@@ -176,9 +181,18 @@ class SampleSheet:
 	def classify(self,index1,index2,lane):
 		key=index1+index2
 
+		if self.m_index2Length == 0:
+			key = index1
+
+		# some kits will include an extra A between the tag and the sequence
+		if len(index1) == self.m_index1Length + 1:
+			key = key[0:self.m_index1Length]
+
 		# use the hash table to classify it in a
 		# fast way
 		if key in self.m_index:
+			if self.m_debug:
+				print("[classify] using fast-path with index")
 			return self.m_index[key]
 
 		best1 = 999
@@ -188,6 +202,9 @@ class SampleSheet:
 		for entry in self.m_entries:
 			score1=self.getMismatches(entry.getIndex1(),index1)
 			score2=self.getMismatches(entry.getIndex2(),index2)
+
+			if self.m_index2Length == 0:
+				score2 = 0
 
 			# both most be at least as good
 			# and at least one of them must be better
@@ -202,6 +219,12 @@ class SampleSheet:
 			# mismatches
 			elif score1 == best1 and score2 == best2:
 				bestEntry = None
+
+		if best1 >= self.m_index1Length/2 and self.m_index1Length != 0:
+			bestEntry = None
+
+		if best2 >= self.m_index2Length/2 and self.m_index2Length != 0:
+			bestEntry = None
 
 		if bestEntry == None:
 			return ["Undetermined_indices","Sample_lane"+lane]
@@ -422,6 +445,8 @@ class OutputDirectory:
 class Demultiplexer:
 	def __init__(self,sampleSheet,inputDirectoryPath,outputDirectoryPath,lane):
 		sheet=SampleSheet(sampleSheet,lane)
+		self.m_debug = False
+		#self.m_debug = True
 
 		if sheet.hasError():
 			return
@@ -440,6 +465,9 @@ class Demultiplexer:
 			index2=sequenceTuple[2].getLine2()
 
 			[project,sample]=sheet.classify(index1,index2,lane)
+
+			if self.m_debug:
+				print("index1= " + index1 + " index2= " + index2 + " lane= " + lane + " result: " + sample)
 
 			outputDirectory.write(project,sample,lane,[sequenceTuple[0],sequenceTuple[3]])
 
