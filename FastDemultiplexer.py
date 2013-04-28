@@ -335,10 +335,30 @@ class InputDirectory:
 
 		for i in os.listdir(self.m_directory):
 			if i.find("_R1_")>=0:
-				self.m_r1Files.append(i)
-				self.m_r2Files.append(i.replace("_R1_","_R2_"))
-				self.m_r3Files.append(i.replace("_R1_","_R3_"))
-				self.m_r4Files.append(i.replace("_R1_","_R4_"))
+				file1 = self.m_directory+"/"+i
+				file2 = self.m_directory+"/"+i.replace("_R1_","_R2_")
+				file3 = self.m_directory+"/"+i.replace("_R1_","_R3_")
+				file4 = self.m_directory+"/"+i.replace("_R1_","_R4_")
+
+				filesAreOk = True
+
+				if not os.path.isfile(file1):
+					filesAreOk = False
+				if not os.path.isfile(file2):
+					filesAreOk = False
+				if not os.path.isfile(file3):
+					filesAreOk = False
+				if not os.path.isfile(file4):
+					filesAreOk = False
+
+				if not filesAreOk:
+					print("Warning: file " + i + " has a missing sibling file")
+					continue
+
+				self.m_r1Files.append(file1)
+				self.m_r2Files.append(file2)
+				self.m_r3Files.append(file3)
+				self.m_r4Files.append(file4)
 
 		self.m_current=0
 
@@ -361,10 +381,10 @@ class InputDirectory:
 			self.m_hasError = True
 			return
 
-		self.m_reader1=FileReader(self.m_directory+"/"+self.m_r1Files[self.m_current])
-		self.m_reader2=FileReader(self.m_directory+"/"+self.m_r2Files[self.m_current])
-		self.m_reader3=FileReader(self.m_directory+"/"+self.m_r3Files[self.m_current])
-		self.m_reader4=FileReader(self.m_directory+"/"+self.m_r4Files[self.m_current])
+		self.m_reader1=FileReader(self.m_r1Files[self.m_current])
+		self.m_reader2=FileReader(self.m_r2Files[self.m_current])
+		self.m_reader3=FileReader(self.m_r3Files[self.m_current])
+		self.m_reader4=FileReader(self.m_r4Files[self.m_current])
 
 
 	def hasNext(self):
